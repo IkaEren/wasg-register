@@ -20,7 +20,7 @@ from Crypto.Cipher import AES
 # ISP URLs were taken from WSG.Common.dll
 # Test URL is for debugging.
 ISP_ESSA_URLS = {
-    "singtel" : "https://singtel-wsg.singtel.com/essa",
+    "singtel" : "https://singtel-wsg.singtel.com/essa_r11",
     "starhub" : "https://api.wifi.starhub.net.sg/essa",
     "myrepublic" : "https://wireless-sg-app.myrepublic.net/essa",
     "test" : "http://localhost:8080/essa",
@@ -124,12 +124,12 @@ def request_registration(isp,
 
 #enddef
 
-def validate_otp(isp, uid, mobile, otp, success_code, transid):
+def validate_otp(isp, dob, mobile, otp, success_code, transid):
 
     r = requests.get(ISP_ESSA_URLS[isp],
                      params={
-                         "api" : "create_user_r1b",
-                         "uid" : uid,
+                         "api" : "retrieve_user_r11x2b",
+                         "dob" : dob,
                          "mobile" : mobile,
                          "otp" : otp,
                          "success_code" : success_code,
@@ -147,8 +147,8 @@ def validate_otp(isp, uid, mobile, otp, success_code, transid):
     #endtry
 
     _check_for_error(resp)
-    _validate(resp, "api", "create_user_r1b")
-    _validate(resp, "version", "2.3")
+    _validate(resp, "api", "retrieve_user_r11x2b")
+    _validate(resp, "version", "2.2")
     _validate(resp, "body", fatal=True)
     _validate(resp["body"], "userid", fatal=True)
     _validate(resp["body"], "enc_userid", fatal=True)
@@ -188,9 +188,11 @@ def main():
     parser.add_argument("mobile",
                         type=str,
                         help="Mobile phone number")
-    parser.add_argument("nric",
+
+    parser.add_argument("dob",
                         type=str,
-                        help="NRIC or equivalent ID number")
+                        default="01011980",
+                        help="Date of Birth in DDMMYYYY format")
 
     parser.add_argument("-I", "--isp",
                         type=str,
@@ -212,11 +214,6 @@ def main():
                         type=str,
                         default="SG",
                         help="Nationality country code")
-
-    parser.add_argument("-d", "--dob",
-                        type=str,
-                        default="1990-01-01",
-                        help="Date of Birth")
 
     parser.add_argument("-e", "--email",
                         type=str,
@@ -293,7 +290,7 @@ def main():
         
     (userid, enc_userid_hex, enc_password_hex) = validate_otp(
         args.isp,
-        args.nric,
+        args.dob,
         args.mobile,
         otp,
         success_code,
